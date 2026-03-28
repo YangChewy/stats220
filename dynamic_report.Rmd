@@ -1,0 +1,109 @@
+---
+title: My dynamic report
+output: html_fragment
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, error=FALSE)
+library(tidyverse)
+```
+
+```{css}
+body {
+  font-family: 'Nikolas'
+}
+
+p {
+  font-size: 21px;
+}
+
+img {
+  display: block;
+  margin: 30px auto;
+}
+
+```
+
+# Do the duration of phone session and purpose affect productivity?
+This report investigates whether the duration of phone usage per sessions and purpose actually affects productivity. 
+
+---
+
+```{r}
+# Read csv file
+data <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTJgZ7FE7aimKPdtwqmMt7mAlHHBf5Ar8rQsg31Ckf7YshOTYuTiw7mvg-_gG4XuxgYzUpomlBL2hjr/pub?gid=984475425&single=true&output=csv")
+
+# Rename variable 
+latest_data <- data %>%
+  rename(minutes_per_session = 2,
+         purpose = 3,
+         productivity = 4)
+
+```
+
+## The Phone Use Purpose Affect on Productivity
+
+```{r}
+# Bar chart 
+latest_data %>%
+  ggplot() +
+  geom_bar(aes(x = purpose, fill = productivity)) +
+  labs(
+    title = "Phone Usage Purpose and Productivity Impact",
+    subtitle = "Comparing how different types of phone use affect productivity",
+    caption = "Source: Data collected using a Google Form",
+    x = "Purpose of phone use",
+    y = "Number of sessions"
+  )
+
+# To find out what purpose have most increased and decreased productivity
+most_increase_df <- latest_data %>%
+  filter(productivity == "Increased") %>%
+  count(purpose) %>%
+  slice_max(n, n = 1)
+
+most_increase <- most_increase_df$purpose
+
+most_decrease_df <- latest_data %>%
+  filter(productivity == "Decreased") %>%
+  count(purpose) %>%
+  slice_max(n, n = 1)
+
+most_decrease <- most_decrease_df$purpose
+
+```
+
+**`r most_increase`**-related phone usage is most associated with increased productivity. 
+In contrast, **`r most_decrease`** is most associated with decreased productivity.
+
+---
+
+## The Duration of Phone Sessions Affect on Productivity
+```{r}
+#Bar chart
+latest_data <- latest_data %>%
+  mutate(session_group = cut(
+    minutes_per_session,
+    breaks = c(0, 35, 70, 105, 1000),
+    labels = c("0–35", "35–70", "70–105", "105+")
+  ))
+
+latest_data %>%
+  ggplot(aes(x = session_group, fill = productivity)) +
+  geom_bar() +
+  labs(
+    title = "Does the Duration of Phone Sessions Affect Productivity?",
+    subtitle = "Comparing productivity across different session lengths",
+    caption = "Source: Data collected using a Google Form",
+    x = "Session length (minutes)",
+    y = "Number of sessions"
+  )
+
+# The average minutes for decreased productivity
+avg_decreased <- mean(latest_data$minutes_per_session[latest_data$productivity == "Decreased"])
+
+```
+
+As shown in the bar chart, phone sessions longer than 105 minutes are associated with a higher number of decreased productivity outcomes, while shorter sessions tend to have fewer decreases in productivity.
+
+Phone sessions that resulted in decreased productivity had an average duration of **`r avg_decreased` minutes**.
